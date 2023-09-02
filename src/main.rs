@@ -1,4 +1,5 @@
 #![allow(unused_imports)]
+mod utils;
 mod xml_parse;
 
 pub use xml_parse::parse_xml;
@@ -29,8 +30,10 @@ async fn main() -> eyre::Result<()> {
     // let channel = Channel::read_from(BufReader::new(&file))?;
 
     let item = parse_xml(reader)?;
+    let len = item.len();
+    println!("lengtt of the vec : {}", len);
 
-    let target_path = Path::new("./example/job_posts.json");
+    let target_path = Path::new("./example/job_post_after.json");
 
     let json_str = serde_json::to_string_pretty(&item).unwrap();
     fs::write(target_path, json_str).expect("Unable to write file");

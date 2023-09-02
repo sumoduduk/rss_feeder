@@ -11,11 +11,15 @@ use mapped_detail::mapped_detail;
 use rss::Channel;
 use serde::Serialize;
 
+use crate::utils::parse_date;
+
 #[derive(Debug, Serialize, PartialEq)]
 pub struct JobPost {
     title: String,
     link: String,
     detail: HashMap<String, String>,
+    posted_on: String,
+    posted_timestamp: i64,
 }
 
 pub fn parse_xml<R>(reader: R) -> eyre::Result<Vec<JobPost>>
@@ -37,9 +41,16 @@ where
                 let title = item.title.unwrap_or_default();
                 let link = item.link.unwrap_or_default();
 
-                let job_post = mapped_detail(title, link, description)?;
+                let posted_on = item.pub_date.unwrap_or_default();
 
-                data.push(job_post);
+                let timestamp = parse_date(&posted_on)?;
+
+                let job_post = mapped_detail(posted_on, timestamp, title, link, description);
+
+                match job_post {
+                    Ok(job_data) => data.push(job_data),
+                    Err(_) => continue,
+                }
             }
             None => continue,
         }
