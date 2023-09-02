@@ -10,16 +10,17 @@ use html_parse::get_detail;
 use mapped_detail::mapped_detail;
 use rss::Channel;
 use serde::Serialize;
+use sqlx::FromRow;
 
 use crate::utils::parse_date;
 
-#[derive(Debug, Serialize, PartialEq)]
+#[derive(FromRow, Debug, Serialize, PartialEq)]
 pub struct JobPost {
-    title: String,
-    link: String,
-    detail: HashMap<String, String>,
-    posted_on: String,
-    posted_timestamp: i64,
+    pub title: String,
+    pub link: String,
+    pub detail: HashMap<String, String>,
+    pub posted_on: String,
+    pub posted_timestamp: i64,
 }
 
 pub fn parse_xml<R>(reader: R) -> eyre::Result<Vec<JobPost>>

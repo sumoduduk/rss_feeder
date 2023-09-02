@@ -5,6 +5,10 @@ pub fn parse_date(date_str: &str) -> eyre::Result<i64> {
     Ok(dt.timestamp())
 }
 
+pub fn datetime_to_string(datetime: Option<DateTime<Utc>>) -> Option<String> {
+    datetime.map(|opt| opt.to_rfc3339())
+}
+
 #[cfg(test)]
 mod tests {
 

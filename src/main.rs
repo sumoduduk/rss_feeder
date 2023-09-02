@@ -1,41 +1,59 @@
 #![allow(unused_imports)]
+mod router;
 mod utils;
 mod xml_parse;
 
-pub use xml_parse::parse_xml;
+use xml_parse::parse_xml;
 
+use actix_web::{
+    web::{get, Data},
+    App, HttpResponse, HttpServer, Responder,
+};
+use dotenvy::dotenv;
 use reqwest::Client;
 use rss::Channel;
 use scraper::{Html, Selector};
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::{
+    env,
     fs::{self, File},
     io::BufReader,
     path::Path,
 };
 
-#[tokio::main]
+use router::get_all;
+
+#[actix_web::main]
 async fn main() -> eyre::Result<()> {
-    //load from dot_envy
-    // let file = Client::new().get(uri).send().await?.bytes().await?;
-    //
-    // let bye = &file[..];
+    dotenv().ok();
 
-    // let channel = Channel::read_from(&response[..]).unwrap();
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    let path = Path::new("./example/rss.xml");
+    let pool: Pool<Postgres> = PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&database_url)
+        .await
+        .unwrap();
 
-    let file = File::open(path)?;
+    let addr = "127.0.0.1:8080";
 
-    let reader = BufReader::new(&file);
-    // let channel = Channel::read_from(BufReader::new(&file))?;
+    println!("listening at port : {}", addr);
 
-    let item = parse_xml(reader)?;
-    let len = item.len();
-    println!("lengtt of the vec : {}", len);
+    HttpServer::new(move || {
+        App::new()
+            .route("/", get().to(index))
+            .route("/get_all", get().to(get_all))
+            .app_data(Data::new(pool.clone()))
+    })
+    .bind(addr)?
+    .run()
+    .await?;
 
-    let target_path = Path::new("./example/job_post_after.json");
-
-    let json_str = serde_json::to_string_pretty(&item).unwrap();
-    fs::write(target_path, json_str).expect("Unable to write file");
     Ok(())
+}
+
+async fn index() -> impl Responder {
+    HttpResponse::Ok()
+        .content_type("text/html")
+        .body("<h1>Hello world!</h1>")
 }
