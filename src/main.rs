@@ -1,8 +1,6 @@
 #![allow(unused_imports)]
-mod html_parse;
 mod xml_parse;
 
-pub use html_parse::get_detail;
 pub use xml_parse::parse_xml;
 
 use reqwest::Client;
@@ -32,7 +30,7 @@ async fn main() -> eyre::Result<()> {
 
     let item = parse_xml(reader)?;
 
-    let target_path = Path::new("./example/job_posts1.json");
+    let target_path = Path::new("./example/job_posts.json");
 
     let json_str = serde_json::to_string_pretty(&item).unwrap();
     fs::write(target_path, json_str).expect("Unable to write file");

@@ -35,7 +35,6 @@ pub fn get_detail(description: &str) -> eyre::Result<HashMap<String, String>> {
 
         mapped.insert(key, value);
     }
-    dbg!(&mapped);
     Ok(mapped)
 }
 

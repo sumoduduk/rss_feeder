@@ -1,15 +1,17 @@
+mod html_parse;
+mod mapped_detail;
+
 use std::{
     collections::HashMap,
     io::{BufRead, Bytes},
 };
 
+use html_parse::get_detail;
+use mapped_detail::mapped_detail;
 use rss::Channel;
 use serde::Serialize;
 
-use crate::get_detail;
-
-#[derive(Serialize)]
-
+#[derive(Debug, Serialize, PartialEq)]
 pub struct JobPost {
     title: String,
     link: String,
@@ -32,16 +34,10 @@ where
 
         match desc {
             Some(description) => {
-                let link_raw = item.link.unwrap_or_default();
-                let links: Vec<_> = link_raw.split("?").collect();
+                let title = item.title.unwrap_or_default();
+                let link = item.link.unwrap_or_default();
 
-                let details = get_detail(&description)?;
-
-                let job_post = JobPost {
-                    title: item.title.unwrap_or_default(),
-                    link: links[0].to_owned(),
-                    detail: details,
-                };
+                let job_post = mapped_detail(title, link, description)?;
 
                 data.push(job_post);
             }
