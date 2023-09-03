@@ -1,5 +1,6 @@
 mod html_parse;
 mod mapped_detail;
+mod task;
 
 use std::{
     collections::HashMap,
@@ -10,17 +11,23 @@ use html_parse::get_detail;
 use mapped_detail::mapped_detail;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
+use sqlx::{FromRow, Pool, Postgres};
 
-use crate::utils::parse_date;
+use crate::{
+    model::{JobPost as JobPostDB, RequestOperation},
+    utils::{parse_date, string_to_datetime},
+};
 
-#[derive(FromRow, Debug, Serialize, Deserialize, PartialEq)]
+use actix_web::rt;
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct JobPost {
-    pub title: String,
-    pub link: String,
-    pub detail: HashMap<String, String>,
-    pub posted_on: String,
-    pub posted_timestamp: i64,
+    title: String,
+    link: String,
+    category: String,
+    detail: HashMap<String, String>,
+    posted_on: String,
+    posted_timestamp: i64,
 }
 
 pub fn parse_xml<R>(reader: R) -> eyre::Result<Vec<JobPost>>
@@ -46,16 +53,27 @@ where
 
                 let timestamp = parse_date(&posted_on)?;
 
-                let job_post = mapped_detail(posted_on, timestamp, title, link, description);
+                let job_post = mapped_detail(posted_on, timestamp, title, link, description)?;
 
-                match job_post {
-                    Ok(job_data) => data.push(job_data),
-                    Err(_) => continue,
-                }
+                data.push(job_post);
             }
             None => continue,
         }
     }
+
+    Ok(data)
+}
+
+pub fn process_request<R>(reader: R, pool: &Pool<Postgres>) -> eyre::Result<Vec<JobPost>>
+where
+    R: BufRead,
+{
+    let channel = Channel::read_from(reader)?;
+
+    let items = channel.items;
+    let len = items.len();
+
+    let mut data: Vec<JobPost> = Vec::with_capacity(len);
 
     Ok(data)
 }

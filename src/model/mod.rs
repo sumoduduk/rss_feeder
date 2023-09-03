@@ -6,12 +6,13 @@ use std::collections::HashMap;
 
 #[derive(FromRow, Debug, Deserialize, Serialize)]
 pub struct JobPost {
-    title: String,
-    link: String,
-    detail: Value,
+    pub title: String,
+    pub link: String,
+    pub detail: Value,
+    pub category: String,
     #[serde(deserialize_with = "deserialize_rfc2822")]
-    posted_on: DateTime<Utc>,
-    posted_timestamp: i64,
+    pub posted_on: DateTime<Utc>,
+    pub posted_timestamp: i64,
 }
 
 fn deserialize_rfc2822<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>

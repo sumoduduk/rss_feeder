@@ -26,17 +26,26 @@ use router::get_all;
 
 use crate::router::{insert_db, print_file, read_by_catergory};
 
+#[derive(Clone)]
+pub struct AppState {
+    pool: Pool<Postgres>,
+    uri: String,
+}
+
 #[actix_web::main]
 async fn main() -> eyre::Result<()> {
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let uri = env::var("URI").expect("URI not found");
 
     let pool: Pool<Postgres> = PgPoolOptions::new()
         .max_connections(10)
         .connect(&database_url)
         .await
         .unwrap();
+
+    let app_state = AppState { pool, uri };
 
     let addr = "127.0.0.1:8080";
 
@@ -49,7 +58,7 @@ async fn main() -> eyre::Result<()> {
             .service(read_by_catergory)
             .service(insert_db)
             .service(print_file)
-            .app_data(Data::new(pool.clone()))
+            .app_data(Data::new(app_state.clone()))
     })
     .bind(addr)?
     .run()

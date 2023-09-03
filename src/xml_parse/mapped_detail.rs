@@ -11,35 +11,21 @@ pub fn mapped_detail(
     let links: Vec<_> = link_raw.split("?").collect();
 
     let details = get_detail(&desc)?;
+    let category = details
+        .get("Category")
+        .ok_or_else(|| eyre!("category not found"))?;
+    let result_string = category.to_lowercase().replace(" ", "_");
 
-    let hourly = details.get("Hourly Range");
-    let budget = details.get("Budget");
+    let job_post = JobPost {
+        title: title_raw,
+        link: links[0].to_owned(),
+        detail: details,
+        posted_on: posted,
+        posted_timestamp: timestamp,
+        category: result_string,
+    };
 
-    match (budget, hourly) {
-        (Some(_), None) => {
-            let job_post = JobPost {
-                title: title_raw,
-                link: links[0].to_owned(),
-                detail: details,
-                posted_on: posted,
-                posted_timestamp: timestamp,
-            };
-
-            Ok(job_post)
-        }
-        (None, Some(_)) => {
-            let job_post = JobPost {
-                title: title_raw,
-                link: links[0].to_owned(),
-                detail: details,
-                posted_on: posted,
-                posted_timestamp: timestamp,
-            };
-
-            Ok(job_post)
-        }
-        (_, _) => Err(eyre!("No Hourly Budget detected")),
-    }
+    Ok(job_post)
 }
 
 #[cfg(test)]
@@ -53,6 +39,7 @@ mod tests {
         let link_test = "https://linktest.com".to_string();
         let posted = "Fri, 01 Sep 2023 02:19:13 +0000".to_string();
         let timestamp = 1693534753;
+        let category = "web_design".to_string();
 
         let test1 = "Picture needs to be designed for the HERO page. Background needs to be changed and some design adjustments<br /><br /><b>Hourly Range</b>: $10.00-$20.00\n\n<br /><b>Posted On</b>: September 01, 2023 02:17 UTC<br /><b>Category</b>: Web Design<br /><b>Skills</b>:Web Design,     Graphic Design,     Illustration,     Website,     Landing Page,     Blog,     Website Asset    \n<br /><b>Skills</b>:        Web Design,                     Graphic Design,                     Illustration,                     Website,                     Landing Page,                     Blog,                     Website Asset            <br /><b>Country</b>: United States\n<br /><a href=\"https://www.upwork.com/jobs/Website-Hero-Page_%7E014431774d3a21a1a2?source=rss\">click to apply</a>\n";
         let mut expected1 = HashMap::new();
@@ -71,6 +58,7 @@ mod tests {
             detail: expected1,
             posted_on: posted.clone(),
             posted_timestamp: timestamp,
+            category,
         };
 
         let mapped_detail =
@@ -85,6 +73,7 @@ mod tests {
         let link_test = "https://linktest2.com".to_string();
         let posted = "Sat, 02 Sep 2023 03:19:13 +0000".to_string();
         let timestamp = 1693621153;
+        let category = "web_design".to_string();
 
         let test2 = "We need a new design for our company website. Must be modern and user-friendly.<br /><br /><b>Budget</b>: $500\n\n<br /><b>Posted On</b>: September 02, 2023 03:17 UTC<br /><b>Category</b>: Web Design<br /><b>Skills</b>:Web Design,     Graphic Design,     User Experience Design,     Website,     Landing Page,     Blog,     Website Asset    \n<br /><b>Skills</b>:        Web Design,                     Graphic Design,                     User Experience Design,                     Website,                     Landing Page,                     Blog,                     Website Asset            <br /><b>Country</b>: United States\n<br /><a href=\"https://www.upwork.com/jobs/Website-Design_%7E014431774d3a21a1a3?source=rss\">click to apply</a>\n";
         let mut expected2 = HashMap::new();
@@ -103,6 +92,7 @@ mod tests {
             detail: expected2,
             posted_on: posted.clone(),
             posted_timestamp: timestamp,
+            category,
         };
 
         let mapped_detail = mapped_detail(
@@ -123,6 +113,7 @@ mod tests {
         let link_test = "https://linktest3.com".to_string();
         let posted = "Sun, 03 Sep 2023 04:19:13 +0000".to_string();
         let timestamp = 1693707553;
+        let category = "graphic_design".to_string();
 
         let test3 = "We need a new logo for our company. Must be modern and eye-catching.<br /><br /><b>Budget</b>: $300\n\n<br /><b>Posted On</b>: September 03, 2023 04:17 UTC<br /><b>Category</b>: Graphic Design<br /><b>Skills</b>:Logo Design,     Graphic Design,     Branding   \n<br /><b>Skills</b>:        Logo Design,                     Graphic Design,                     Branding           <br /><b>Country</b>: United States\n<br /><a href=\"https://www.upwork.com/jobs/Logo-Design_%7E014431774d3a21a1a4?source=rss\">click to apply</a>\n";
         let mut expected3 = HashMap::new();
@@ -140,6 +131,7 @@ mod tests {
             detail: expected3,
             posted_on: posted.clone(),
             posted_timestamp: timestamp,
+            category,
         };
 
         let mapped_detail = mapped_detail(
@@ -160,6 +152,7 @@ mod tests {
         let link_test = "https://linktest4.com".to_string();
         let posted = "Mon, 04 Sep 2023 05:19:13 +0000".to_string();
         let timestamp = 1693793953;
+        let category = "writing".to_string();
 
         let test4 = "We need a content writer for our company blog. Must have experience in the tech industry.<br /><br /><b>Budget</b>: $1000\n\n<br /><b>Posted On</b>: September 04, 2023 05:17 UTC<br /><b>Category</b>: Writing<br /><b>Skills</b>:Content Writing,     Blog Writing,     Tech Writing   \n<br /><b>Skills</b>:        Content Writing,                     Blog Writing,                     Tech Writing           <br /><b>Country</b>: United States\n<br /><a href=\"https://www.upwork.com/jobs/Content-Writer-Needed_%7E014431774d3a21a1a5?source=rss\">click to apply</a>\n";
         let mut expected4 = HashMap::new();
@@ -177,6 +170,7 @@ mod tests {
             detail: expected4,
             posted_on: posted.clone(),
             posted_timestamp: timestamp,
+            category,
         };
 
         let mapped_detail = mapped_detail(
@@ -197,6 +191,7 @@ mod tests {
         let link_test = "https://linktest5.com".to_string();
         let posted = "Tue, 05 Sep 2023 06:19:13 +0000".to_string();
         let timestamp = 1693880353;
+        let category = "web_development".to_string();
 
         let test5 = "We need a web developer for our company website. Must have experience with modern web technologies.<br /><br /><b>Budget</b>: $5000\n\n<br /><b>Posted On</b>: September 05, 2023 06:17 UTC<br /><b>Category</b>: Web Development<br /><b>Skills</b>:HTML,     CSS,     JavaScript,     Web Development   \n<br /><b>Skills</b>:        HTML,                     CSS,                     JavaScript,                     Web Development           <br /><b>Country</b>: United States\n<br /><a href=\"https://www.upwork.com/jobs/Web-Developer-Needed_%7E014431774d3a21a1a6?source=rss\">click to apply</a>\n";
         let mut expected5 = HashMap::new();
@@ -214,6 +209,7 @@ mod tests {
             detail: expected5,
             posted_on: posted.clone(),
             posted_timestamp: timestamp,
+            category,
         };
 
         let mapped_detail = mapped_detail(
@@ -228,30 +224,30 @@ mod tests {
         assert_eq!(job_post, mapped_detail);
     }
 
-    #[test]
-    fn test_error_get_detail() {
-        let title_test = "Title 05".to_string();
-        let link_test = "https://linktest5.com".to_string();
-        let posted = "Tue, 05 Sep 2023 06:19:13 +0000".to_string();
-        let timestamp = 1693880353;
-
-        let test5 = "We need a web developer for our company website. Must have experience with modern web technologies.<br /><br /><b>Posted On</b>: September 05, 2023 06:17 UTC<br /><b>Category</b>: Web Development<br /><b>Skills</b>:HTML,     CSS,     JavaScript,     Web Development   \n<br /><b>Skills</b>:        HTML,                     CSS,                     JavaScript,                     Web Development           <br /><b>Country</b>: United States\n<br /><a href=\"https://www.upwork.com/jobs/Web-Developer-Needed_%7E014431774d3a21a1a6?source=rss\">click to apply</a>\n";
-        let mut expected5 = HashMap::new();
-        expected5.insert("Category".to_string(), "Web Development".to_string());
-        expected5.insert(
-            "Skills".to_string(),
-            "HTML, CSS, JavaScript, Web Development".to_string(),
-        );
-        expected5.insert("Country".to_string(), "United States".to_string());
-
-        let mapped_detail = mapped_detail(
-            posted,
-            timestamp,
-            title_test.clone(),
-            link_test.clone(),
-            test5.to_string(),
-        );
-
-        assert!(mapped_detail.is_err());
-    }
+    // #[test]
+    // fn test_error_get_detail() {
+    //     let title_test = "Title 05".to_string();
+    //     let link_test = "https://linktest5.com".to_string();
+    //     let posted = "Tue, 05 Sep 2023 06:19:13 +0000".to_string();
+    //     let timestamp = 1693880353;
+    //
+    //     let test5 = "We need a web developer for our company website. Must have experience with modern web technologies.<br /><br /><b>Posted On</b>: September 05, 2023 06:17 UTC<br /><b>Category</b>: Web Development<br /><b>Skills</b>:HTML,     CSS,     JavaScript,     Web Development   \n<br /><b>Skills</b>:        HTML,                     CSS,                     JavaScript,                     Web Development           <br /><b>Country</b>: United States\n<br /><a href=\"https://www.upwork.com/jobs/Web-Developer-Needed_%7E014431774d3a21a1a6?source=rss\">click to apply</a>\n";
+    //     let mut expected5 = HashMap::new();
+    //     expected5.insert("Category".to_string(), "Web Development".to_string());
+    //     expected5.insert(
+    //         "Skills".to_string(),
+    //         "HTML, CSS, JavaScript, Web Development".to_string(),
+    //     );
+    //     expected5.insert("Country".to_string(), "United States".to_string());
+    //
+    //     let mapped_detail = mapped_detail(
+    //         posted,
+    //         timestamp,
+    //         title_test.clone(),
+    //         link_test.clone(),
+    //         test5.to_string(),
+    //     );
+    //
+    //     assert!(mapped_detail.is_err());
+    // }
 }

@@ -5,6 +5,7 @@ use actix_web::{
     web::{Data, Json, Path},
     HttpResponse, Responder,
 };
+use reqwest::Client;
 use serde_json::{json, Value};
 use sqlx::{Pool, Postgres};
 
@@ -12,6 +13,7 @@ use crate::{
     model::{JobPost, RequestOperation, ResponseOperation},
     utils::datetime_to_string,
     xml_parse::parse_xml,
+    AppState,
 };
 
 type DataPool = Data<Pool<Postgres>>;
@@ -43,10 +45,8 @@ pub async fn read_by_catergory(pool: DataPool, category: Path<String>) -> impl R
 
 #[post("/insert")]
 pub async fn insert_db(pool: DataPool, body: Json<JobPost>) -> impl Responder {
-    println!("traced");
     let pool = pool.get_ref();
     let body = body.into_inner();
-    dbg!(&body);
 
     let row_affected = RequestOperation::Insert(body).execute(pool).await;
 
@@ -58,6 +58,14 @@ pub async fn insert_db(pool: DataPool, body: Json<JobPost>) -> impl Responder {
         Ok(ResponseOperation::Inserted(_)) => HttpResponse::Ok().json(value),
         _ => HttpResponse::InternalServerError().finish(),
     }
+}
+
+pub async fn begin_scrape(state: Data<AppState>) -> impl Responder {
+    let pool = &state.get_ref().pool;
+    let uri = &state.get_ref().uri;
+    let bytes_response = Client::new().get(uri).send().await?.bytes().await?;
+
+    HttpResponse::InternalServerError().finish()
 }
 
 // #[post("/insert")]

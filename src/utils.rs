@@ -9,6 +9,13 @@ pub fn datetime_to_string(datetime: Option<DateTime<Utc>>) -> Option<String> {
     datetime.map(|opt| opt.to_rfc3339())
 }
 
+pub fn string_to_datetime(input: &str) -> DateTime<Utc> {
+    let datetime = DateTime::parse_from_rfc3339(input)
+        .unwrap()
+        .with_timezone(&Utc);
+    datetime
+}
+
 #[cfg(test)]
 mod tests {
 
