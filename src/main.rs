@@ -24,6 +24,8 @@ use std::{
 
 use router::get_all;
 
+use crate::router::{insert_db, print_file, read_by_catergory};
+
 #[actix_web::main]
 async fn main() -> eyre::Result<()> {
     dotenv().ok();
@@ -44,6 +46,9 @@ async fn main() -> eyre::Result<()> {
         App::new()
             .route("/", get().to(index))
             .route("/get_all", get().to(get_all))
+            .service(read_by_catergory)
+            .service(insert_db)
+            .service(print_file)
             .app_data(Data::new(pool.clone()))
     })
     .bind(addr)?

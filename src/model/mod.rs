@@ -1,35 +1,98 @@
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::Value;
+use sqlx::{FromRow, PgPool, Pool, Postgres, Row};
 use std::collections::HashMap;
 
-use chrono::{DateTime, Utc};
-use sqlx::{FromRow, PgPool};
-
-#[derive(FromRow, Debug)]
-struct JobPost {
+#[derive(FromRow, Debug, Deserialize, Serialize)]
+pub struct JobPost {
     title: String,
     link: String,
-    detail: HashMap<String, String>,
+    detail: Value,
+    #[serde(deserialize_with = "deserialize_rfc2822")]
     posted_on: DateTime<Utc>,
     posted_timestamp: i64,
 }
 
-enum ResponseOperation {
-    Inserted,
-    AllRows,
-    CategoryRows,
+fn deserialize_rfc2822<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    DateTime::parse_from_rfc2822(&s)
+        .map(|dt| dt.with_timezone(&Utc))
+        .map_err(serde::de::Error::custom)
 }
 
-enum RequestOperation {
+pub enum RequestOperation {
     ReadAll,
     ReadByCategory(String),
     Insert(JobPost),
 }
 
+#[derive(Debug)]
+pub enum ResponseOperation {
+    Inserted(u64),
+    RowsVec(Vec<JobPost>),
+}
+
 impl RequestOperation {
-    pub fn execute(&self, pool: &PgPool) -> Result<RequestOperation, sqlx::Error> {
+    async fn read_all(pool: &PgPool) -> Result<Vec<JobPost>, sqlx::Error> {
+        let posts = sqlx::query_as(
+            "SELECT title, link, detail, posted_on, posted_timestamp FROM job_posts",
+        )
+        .fetch_all(pool)
+        .await?;
+
+        Ok(posts)
+    }
+
+    async fn read_by_category(pool: &PgPool, category: &str) -> Result<Vec<JobPost>, sqlx::Error> {
+        let posts = sqlx::query_as::<Postgres, JobPost>(
+            "
+            SELECT title, link, detail, posted_on, posted_timestamp
+            FROM job_posts
+            WHERE detail->>$1 AND posted_on >= NOW() - INTERVAL '30 minutes'
+            ",
+        )
+        .bind(category)
+        .fetch_all(pool)
+        .await?;
+
+        Ok(posts)
+    }
+
+    async fn insert(pool: &PgPool, post: &JobPost) -> Result<u64, sqlx::Error> {
+        let inserted = sqlx::query(
+            "INSERT INTO job_posts (title, link, detail, posted_on, posted_timestamp) VALUES ($1, $2, $3, $4, $5)",
+        )
+        .bind(&post.title)
+        .bind(&post.link)
+        .bind(&post.detail)
+        .bind(&post.posted_on)
+        .bind(&post.posted_timestamp)
+        .execute(pool)
+        .await?;
+
+        let affected = inserted.rows_affected();
+
+        Ok(affected)
+    }
+
+    pub async fn execute(&self, pool: &PgPool) -> Result<ResponseOperation, sqlx::Error> {
         match self {
-            RequestOperation::ReadAll => todo!(),
-            RequestOperation::ReadByCategory(_) => todo!(),
-            RequestOperation::Insert(_) => todo!(),
+            RequestOperation::ReadAll => {
+                let posts = Self::read_all(pool).await?;
+                Ok(ResponseOperation::RowsVec(posts))
+            }
+            RequestOperation::ReadByCategory(category) => {
+                let posts = Self::read_by_category(pool, category).await?;
+                Ok(ResponseOperation::RowsVec(posts))
+            }
+            RequestOperation::Insert(post) => {
+                let inserted = Self::insert(pool, post).await?;
+                Ok(ResponseOperation::Inserted(inserted))
+            }
         }
     }
 }

@@ -9,12 +9,12 @@ use std::{
 use html_parse::get_detail;
 use mapped_detail::mapped_detail;
 use rss::Channel;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 use crate::utils::parse_date;
 
-#[derive(FromRow, Debug, Serialize, PartialEq)]
+#[derive(FromRow, Debug, Serialize, Deserialize, PartialEq)]
 pub struct JobPost {
     pub title: String,
     pub link: String,

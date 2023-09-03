@@ -14,6 +14,6 @@ scraper = "0.17.1"
 serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.105"
 tokio = { version = "1.32.0", features = ["full"] }
-sqlx = { version = "0.6.3", features = ["postgres", "chrono", "runtime-tokio-rustls"] }
+sqlx = { version = "0.6.3", features = ["postgres", "chrono", "runtime-tokio-rustls", "json"] }
 actix-web = { version = "4.4.0", features = ["actix-tls"] }
-chrono = "0.4.28"
+chrono = { version = "0.4.28", features = ["serde"] }
