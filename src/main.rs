@@ -1,4 +1,5 @@
 #![allow(unused_imports)]
+mod model;
 mod router;
 mod utils;
 mod xml_parse;
