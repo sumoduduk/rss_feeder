@@ -12,14 +12,12 @@ use sqlx::{Pool, Postgres};
 use crate::{
     model::{JobPost, RequestOperation, ResponseOperation},
     utils::datetime_to_string,
-    xml_parse::parse_xml,
+    xml_parse::{parse_xml, process_request},
     AppState,
 };
 
-type DataPool = Data<Pool<Postgres>>;
-
-pub async fn get_all(pool: DataPool) -> impl Responder {
-    let conn = pool.get_ref();
+pub async fn get_all(pool: Data<AppState>) -> impl Responder {
+    let conn = &pool.get_ref().pool;
 
     let response_db = RequestOperation::ReadAll.execute(conn).await;
 
@@ -29,9 +27,21 @@ pub async fn get_all(pool: DataPool) -> impl Responder {
     }
 }
 
+pub async fn recent_search(pool: Data<AppState>) -> impl Responder {
+    println!("test");
+    let conn = &pool.get_ref().pool;
+
+    let response_db = RequestOperation::Recent.execute(conn).await;
+
+    match response_db {
+        Ok(ResponseOperation::RowsVec(data)) => HttpResponse::Ok().json(data),
+        _ => HttpResponse::InternalServerError().finish(),
+    }
+}
+
 #[get("/get_category/{category}")]
-pub async fn read_by_catergory(pool: DataPool, category: Path<String>) -> impl Responder {
-    let conn = pool.get_ref();
+pub async fn read_by_catergory(pool: Data<AppState>, category: Path<String>) -> impl Responder {
+    let conn = &pool.get_ref().pool;
 
     let response_db = RequestOperation::ReadByCategory(category.into_inner())
         .execute(conn)
@@ -44,11 +54,11 @@ pub async fn read_by_catergory(pool: DataPool, category: Path<String>) -> impl R
 }
 
 #[post("/insert")]
-pub async fn insert_db(pool: DataPool, body: Json<JobPost>) -> impl Responder {
-    let pool = pool.get_ref();
+pub async fn insert_db(pool: Data<AppState>, body: Json<JobPost>) -> impl Responder {
+    let conn = &pool.get_ref().pool;
     let body = body.into_inner();
 
-    let row_affected = RequestOperation::Insert(body).execute(pool).await;
+    let row_affected = RequestOperation::Insert(body).execute(conn).await;
 
     let value = json!({
     "message": "OK"
@@ -63,9 +73,39 @@ pub async fn insert_db(pool: DataPool, body: Json<JobPost>) -> impl Responder {
 pub async fn begin_scrape(state: Data<AppState>) -> impl Responder {
     let pool = &state.get_ref().pool;
     let uri = &state.get_ref().uri;
-    let bytes_response = Client::new().get(uri).send().await?.bytes().await?;
+    let bytes_response = Client::new().get(uri).send().await;
 
-    HttpResponse::InternalServerError().finish()
+    match bytes_response {
+        Ok(resp) => {
+            let bytes_res = resp.bytes().await;
+
+            match bytes_res {
+                Ok(is_bytes) => {
+                    let result = process_request(&is_bytes[..], pool).await;
+
+                    match result {
+                        Ok(success_msg) => {
+                            let res = json!({
+                            "message": success_msg,
+                            "status": "OK"
+                            });
+
+                            HttpResponse::Ok().json(res)
+                        }
+                        Err(_) => HttpResponse::InternalServerError().json(json!({
+                        "message": "error spawn worker task"
+                        })),
+                    }
+                }
+                Err(_) => HttpResponse::InternalServerError().json(json!({
+                "message": "error processing bytes"
+                })),
+            }
+        }
+        Err(_) => HttpResponse::InternalServerError().json(json!({
+        "message": "error from URI"
+        })),
+    }
 }
 
 // #[post("/insert")]

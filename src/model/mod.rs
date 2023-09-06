@@ -29,6 +29,7 @@ pub enum RequestOperation {
     ReadAll,
     ReadByCategory(String),
     Insert(JobPost),
+    Recent,
 }
 
 #[derive(Debug)]
@@ -40,7 +41,7 @@ pub enum ResponseOperation {
 impl RequestOperation {
     async fn read_all(pool: &PgPool) -> Result<Vec<JobPost>, sqlx::Error> {
         let posts = sqlx::query_as(
-            "SELECT title, link, detail, posted_on, posted_timestamp FROM job_posts",
+            "SELECT title, link, detail, posted_on, posted_timestamp, category FROM job_posts",
         )
         .fetch_all(pool)
         .await?;
@@ -48,12 +49,27 @@ impl RequestOperation {
         Ok(posts)
     }
 
+    async fn search_recent(pool: &PgPool) -> Result<Vec<JobPost>, sqlx::Error> {
+        let posts = sqlx::query_as(
+            "
+            SELECT *
+            FROM job_posts
+            WHERE posted_on >= NOW() - INTERVAL '120 minutes'
+            ",
+        )
+        .fetch_all(pool)
+        .await;
+
+        dbg!(&posts);
+        Ok(posts?)
+    }
+
     async fn read_by_category(pool: &PgPool, category: &str) -> Result<Vec<JobPost>, sqlx::Error> {
         let posts = sqlx::query_as::<Postgres, JobPost>(
             "
             SELECT title, link, detail, posted_on, posted_timestamp
             FROM job_posts
-            WHERE detail->>$1 AND posted_on >= NOW() - INTERVAL '30 minutes'
+            WHERE category = $1 AND posted_on >= NOW() - INTERVAL '30 minutes'
             ",
         )
         .bind(category)
@@ -65,15 +81,17 @@ impl RequestOperation {
 
     async fn insert(pool: &PgPool, post: &JobPost) -> Result<u64, sqlx::Error> {
         let inserted = sqlx::query(
-            "INSERT INTO job_posts (title, link, detail, posted_on, posted_timestamp) VALUES ($1, $2, $3, $4, $5)",
+            "INSERT INTO job_posts (title, link, detail, posted_on, posted_timestamp, category) VALUES ($1, $2, $3, $4, $5, $6)",
         )
         .bind(&post.title)
         .bind(&post.link)
         .bind(&post.detail)
         .bind(&post.posted_on)
         .bind(&post.posted_timestamp)
+        .bind(&post.category)
         .execute(pool)
         .await?;
+        dbg!(&inserted);
 
         let affected = inserted.rows_affected();
 
@@ -84,6 +102,10 @@ impl RequestOperation {
         match self {
             RequestOperation::ReadAll => {
                 let posts = Self::read_all(pool).await?;
+                Ok(ResponseOperation::RowsVec(posts))
+            }
+            RequestOperation::Recent => {
+                let posts = Self::search_recent(pool).await?;
                 Ok(ResponseOperation::RowsVec(posts))
             }
             RequestOperation::ReadByCategory(category) => {

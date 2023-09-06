@@ -3,8 +3,6 @@ use std::collections::HashMap;
 
 use scraper::{Html, Selector};
 
-use crate::utils::parse_date;
-
 pub fn get_detail(description: &str) -> eyre::Result<HashMap<String, String>> {
     let doc = Html::parse_document(description);
 

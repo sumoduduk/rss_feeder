@@ -20,6 +20,8 @@ use crate::{
 
 use actix_web::rt;
 
+use self::task::worker_task;
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct JobPost {
     title: String,
@@ -64,16 +66,15 @@ where
     Ok(data)
 }
 
-pub fn process_request<R>(reader: R, pool: &Pool<Postgres>) -> eyre::Result<Vec<JobPost>>
+pub async fn process_request<R>(reader: R, pool: &Pool<Postgres>) -> eyre::Result<String>
 where
     R: BufRead,
 {
     let channel = Channel::read_from(reader)?;
 
     let items = channel.items;
-    let len = items.len();
 
-    let mut data: Vec<JobPost> = Vec::with_capacity(len);
+    worker_task(items, pool).await;
 
-    Ok(data)
+    Ok("Success".to_string())
 }

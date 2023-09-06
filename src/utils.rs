@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 
 pub fn parse_date(date_str: &str) -> eyre::Result<i64> {
     let dt = DateTime::parse_from_str(date_str, "%a, %d %b %Y %H:%M:%S %z")?;
@@ -9,17 +9,62 @@ pub fn datetime_to_string(datetime: Option<DateTime<Utc>>) -> Option<String> {
     datetime.map(|opt| opt.to_rfc3339())
 }
 
-pub fn string_to_datetime(input: &str) -> DateTime<Utc> {
-    let datetime = DateTime::parse_from_rfc3339(input)
-        .unwrap()
-        .with_timezone(&Utc);
-    datetime
+pub fn string_to_datetime(input: &str) -> eyre::Result<DateTime<Utc>> {
+    let date = DateTime::parse_from_rfc2822(input)?.with_timezone(&Utc);
+
+    Ok(date)
 }
 
 #[cfg(test)]
 mod tests {
 
     use super::*;
+
+    use chrono::{DateTime, Utc};
+
+    #[test]
+    fn test_parse_rfc2822() {
+        let date_str = "Fri, 01 Sep 2023 13:04:06 +0000";
+        let expected = DateTime::parse_from_rfc3339("2023-09-01T13:04:06Z").unwrap();
+        let actual = DateTime::parse_from_rfc2822(date_str)
+            .unwrap()
+            .with_timezone(&Utc);
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_parse_rfc2822_with_different_timezone() {
+        let date_str = "Fri, 01 Sep 2023 15:04:06 +0200";
+        let expected = DateTime::parse_from_rfc3339("2023-09-01T13:04:06Z").unwrap();
+        let actual = DateTime::parse_from_rfc2822(date_str)
+            .unwrap()
+            .with_timezone(&Utc);
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_parse_rfc2822_with_another_different_timezone() {
+        let date_str = "Fri, 01 Sep 2023 08:04:06 -0500";
+        let expected = DateTime::parse_from_rfc3339("2023-09-01T13:04:06Z").unwrap();
+        let actual = DateTime::parse_from_rfc2822(date_str)
+            .unwrap()
+            .with_timezone(&Utc);
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_parse_invalid_rfc2822() {
+        let date_str = "Invalid date string";
+        let result = DateTime::parse_from_rfc2822(date_str);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_empty_string() {
+        let date_str = "";
+        let result = DateTime::parse_from_rfc2822(date_str);
+        assert!(result.is_err());
+    }
 
     #[test]
     fn test_parse_date_1() {

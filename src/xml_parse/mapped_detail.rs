@@ -31,6 +31,7 @@ pub fn mapped_detail(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::string_to_datetime;
     use std::collections::HashMap;
 
     #[test]
@@ -65,6 +66,9 @@ mod tests {
             mapped_detail(posted, timestamp, title_test, link_test, test1.to_string()).unwrap();
 
         assert_eq!(job_post, mapped_detail);
+        let time = string_to_datetime(&mapped_detail.posted_on);
+
+        assert!(time.is_ok());
     }
 
     #[test]
@@ -105,6 +109,9 @@ mod tests {
         .unwrap();
 
         assert_eq!(job_post, mapped_detail);
+        let time = string_to_datetime(&mapped_detail.posted_on);
+
+        assert!(time.is_ok());
     }
 
     #[test]
@@ -144,6 +151,9 @@ mod tests {
         .unwrap();
 
         assert_eq!(job_post, mapped_detail);
+        let time = string_to_datetime(&mapped_detail.posted_on);
+
+        assert!(time.is_ok());
     }
 
     #[test]
