@@ -8,13 +8,13 @@ pub fn mapped_detail(
     link_raw: String,
     desc: String,
 ) -> eyre::Result<JobPost> {
-    let links: Vec<_> = link_raw.split("?").collect();
+    let links: Vec<_> = link_raw.split('?').collect();
 
     let details = get_detail(&desc)?;
     let category = details
         .get("Category")
         .ok_or_else(|| eyre!("category not found"))?;
-    let result_string = category.to_lowercase().replace(" ", "_");
+    let result_string = category.to_lowercase().replace(' ', "_");
 
     let job_post = JobPost {
         title: title_raw,

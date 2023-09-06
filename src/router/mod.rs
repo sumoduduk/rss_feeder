@@ -11,7 +11,8 @@ use sqlx::{Pool, Postgres};
 
 use crate::{
     model::{JobPost, RequestOperation, ResponseOperation},
-    utils::datetime_to_string,
+    schdule::check_schedule,
+    utils::{datetime_to_string, reqwst_to_server},
     xml_parse::{parse_xml, process_request},
     AppState,
 };
@@ -108,11 +109,15 @@ pub async fn begin_scrape(state: Data<AppState>) -> impl Responder {
     }
 }
 
-// #[post("/insert")]
-// pub async fn insert_db(body: Json<crate::xml_parse::JobPost>) -> impl Responder {
-//     dbg!(body);
-//     HttpResponse::Ok().finish()
-// }
+pub async fn start_task(state: Data<AppState>) -> impl Responder {
+    let pool = &state.get_ref().pool;
+
+    let at_interval = check_schedule();
+    if !at_interval {
+        reqwst_to_server().await;
+    } else {
+    }
+}
 
 #[get("/print_file")]
 pub async fn print_file() -> impl Responder {

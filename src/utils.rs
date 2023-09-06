@@ -1,4 +1,9 @@
+use actix_web::{HttpResponse, Responder};
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use reqwest::{Client, StatusCode};
+use serde_json::json;
+
+static URI: &str = "https://notionpush.sumoboker.repl.co/get_porto";
 
 pub fn parse_date(date_str: &str) -> eyre::Result<i64> {
     let dt = DateTime::parse_from_str(date_str, "%a, %d %b %Y %H:%M:%S %z")?;
@@ -13,6 +18,29 @@ pub fn string_to_datetime(input: &str) -> eyre::Result<DateTime<Utc>> {
     let date = DateTime::parse_from_rfc2822(input)?.with_timezone(&Utc);
 
     Ok(date)
+}
+
+pub async fn reqwst_to_server() -> impl Responder {
+    let response = Client::new().get(URI).send().await;
+    match response {
+        Ok(resp) => {
+            if resp.status().is_success() {
+                let res = json!({
+                "message": "rewst to server",
+                "status": "OK"
+                });
+
+                HttpResponse::Ok().json(res)
+            } else {
+                HttpResponse::InternalServerError().json(json!({
+                "message": "error from internal"
+                }))
+            }
+        }
+        Err(_) => HttpResponse::InternalServerError().json(json!({
+        "message": "error from internal"
+        })),
+    }
 }
 
 #[cfg(test)]
