@@ -5,17 +5,36 @@ use actix_web::{
     web::{Data, Json, Path},
     HttpResponse, Responder,
 };
+use chrono::{Timelike, Utc};
 use reqwest::Client;
 use serde_json::{json, Value};
 use sqlx::{Pool, Postgres};
 
 use crate::{
     model::{JobPost, RequestOperation, ResponseOperation},
-    schdule::check_schedule,
+    schdule::{check_schedule, to_central_time},
     utils::{datetime_to_string, reqwst_to_server},
     xml_parse::{parse_xml, process_request},
     AppState,
 };
+pub async fn start_task(state: Data<AppState>) -> impl Responder {
+    let pool = &state.get_ref().pool;
+
+    let now = Utc::now();
+    let time_central = to_central_time(&now);
+
+    match time_central {
+        Some(time_some) => {
+            let hour = time_some.hour();
+            let at_interval = check_schedule(hour);
+            if !at_interval {
+                reqwst_to_server().await
+            } else {
+            }
+        }
+        None => todo!(),
+    }
+}
 
 pub async fn get_all(pool: Data<AppState>) -> impl Responder {
     let conn = &pool.get_ref().pool;
@@ -29,7 +48,6 @@ pub async fn get_all(pool: Data<AppState>) -> impl Responder {
 }
 
 pub async fn recent_search(pool: Data<AppState>) -> impl Responder {
-    println!("test");
     let conn = &pool.get_ref().pool;
 
     let response_db = RequestOperation::Recent.execute(conn).await;
@@ -106,16 +124,6 @@ pub async fn begin_scrape(state: Data<AppState>) -> impl Responder {
         Err(_) => HttpResponse::InternalServerError().json(json!({
         "message": "error from URI"
         })),
-    }
-}
-
-pub async fn start_task(state: Data<AppState>) -> impl Responder {
-    let pool = &state.get_ref().pool;
-
-    let at_interval = check_schedule();
-    if !at_interval {
-        reqwst_to_server().await;
-    } else {
     }
 }
 
