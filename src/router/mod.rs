@@ -30,6 +30,7 @@ pub async fn start_task(state: Data<AppState>) -> impl Responder {
             if !at_interval {
                 reqwst_to_server().await
             } else {
+                todo!();
             }
         }
         None => todo!(),
