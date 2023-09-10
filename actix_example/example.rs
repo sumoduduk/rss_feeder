@@ -106,3 +106,31 @@ fn anot() {
     let json_str = serde_json::to_string_pretty(&item).unwrap();
     fs::write(target_path, json_str).expect("Unable to write file");
 }
+
+#[get("/print_file")]
+pub async fn print_file() -> impl Responder {
+    // let file = Client::new().get(uri).send().await?.bytes().await?;
+    //
+    // let bye = &file[..];
+
+    // let channel = Channel::read_from(&response[..]).unwrap();
+
+    let path = std::path::Path::new("./example/rss.xml");
+
+    let file = std::fs::File::open(path).unwrap();
+
+    let reader = BufReader::new(&file);
+    // let channel = Channel::read_from(BufReader::new(&file))?;
+
+    let item = parse_xml(reader).unwrap();
+
+    let len = item.len();
+    println!("lengtt of the vec : {}", len);
+
+    let target_path = std::path::Path::new("./example/job_post_after.json");
+
+    let json_str = serde_json::to_string_pretty(&item).unwrap();
+    std::fs::write(target_path, json_str).expect("Unable to write file");
+
+    HttpResponse::Ok().finish()
+}

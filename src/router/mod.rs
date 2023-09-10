@@ -12,7 +12,7 @@ use sqlx::{Pool, Postgres};
 
 use crate::{
     model::{JobPost, RequestOperation, ResponseOperation},
-    schdule::{check_schedule, to_central_time},
+    schdule::{check_schedule, return_task_hour, to_central_time},
     utils::{datetime_to_string, reqwst_to_server},
     xml_parse::{parse_xml, process_request},
     AppState,
@@ -30,6 +30,9 @@ pub async fn start_task(state: Data<AppState>) -> impl Responder {
             if !at_interval {
                 reqwst_to_server().await
             } else {
+                let hour_now = time_some.hour();
+                let returned_time = return_task_hour(hour_now);
+
                 todo!();
             }
         }
@@ -126,32 +129,4 @@ pub async fn begin_scrape(state: Data<AppState>) -> impl Responder {
         "message": "error from URI"
         })),
     }
-}
-
-#[get("/print_file")]
-pub async fn print_file() -> impl Responder {
-    // let file = Client::new().get(uri).send().await?.bytes().await?;
-    //
-    // let bye = &file[..];
-
-    // let channel = Channel::read_from(&response[..]).unwrap();
-
-    let path = std::path::Path::new("./example/rss.xml");
-
-    let file = std::fs::File::open(path).unwrap();
-
-    let reader = BufReader::new(&file);
-    // let channel = Channel::read_from(BufReader::new(&file))?;
-
-    let item = parse_xml(reader).unwrap();
-
-    let len = item.len();
-    println!("lengtt of the vec : {}", len);
-
-    let target_path = std::path::Path::new("./example/job_post_after.json");
-
-    let json_str = serde_json::to_string_pretty(&item).unwrap();
-    std::fs::write(target_path, json_str).expect("Unable to write file");
-
-    HttpResponse::Ok().finish()
 }

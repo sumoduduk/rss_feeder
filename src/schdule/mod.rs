@@ -1,4 +1,4 @@
-use chrono::{DateTime, FixedOffset, Timelike, Utc};
+use chrono::{DateTime, Datelike, FixedOffset, Timelike, Utc};
 
 static TIME_ARRAY: [u32; 8] = [10, 12, 15, 17, 18, 19, 21, 24];
 
@@ -28,6 +28,13 @@ pub fn to_central_time(now: &DateTime<Utc>) -> Option<DateTime<FixedOffset>> {
     } else {
         None
     }
+}
+
+pub fn formated_time(dt: &DateTime<FixedOffset>, hour: u32) -> String {
+    let month_now = dt.month();
+    let day_now = dt.day();
+
+    format!("{month_now}_{day_now}_{hour}")
 }
 
 #[cfg(test)]

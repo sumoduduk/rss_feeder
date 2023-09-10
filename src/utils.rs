@@ -14,6 +14,10 @@ pub fn datetime_to_string(datetime: Option<DateTime<Utc>>) -> Option<String> {
     datetime.map(|opt| opt.to_rfc3339())
 }
 
+pub fn parse_datetime_timezone(datetime_str: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
+    return Utc.datetime_from_str(datetime_str, "%Y-%m-%d %H:%M:%S%z");
+}
+
 pub fn string_to_datetime(input: &str) -> eyre::Result<DateTime<Utc>> {
     let date = DateTime::parse_from_rfc2822(input)?.with_timezone(&Utc);
 
