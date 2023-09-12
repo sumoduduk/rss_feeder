@@ -1,3 +1,5 @@
+pub mod schedule_operation;
+
 use chrono::{DateTime, Datelike, FixedOffset, Timelike, Utc};
 
 static TIME_ARRAY: [u32; 8] = [10, 12, 15, 17, 18, 19, 21, 24];
@@ -15,8 +17,7 @@ pub fn return_task_hour(current: u32) -> u32 {
 }
 
 pub fn check_schedule(now_hour: u32) -> bool {
-    let at_interval = now_hour >= 10 && now_hour < 24;
-    at_interval
+    (10..24).contains(&now_hour)
 }
 
 pub fn to_central_time(now: &DateTime<Utc>) -> Option<DateTime<FixedOffset>> {

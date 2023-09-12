@@ -1,4 +1,4 @@
-mod schedule_dc;
+pub mod schedule_dc;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Deserializer, Serialize};
@@ -63,7 +63,7 @@ impl RequestOperation {
         .await;
 
         dbg!(&posts);
-        Ok(posts?)
+        posts
     }
 
     async fn read_by_category(pool: &PgPool, category: &str) -> Result<Vec<JobPost>, sqlx::Error> {
@@ -88,8 +88,8 @@ impl RequestOperation {
         .bind(&post.title)
         .bind(&post.link)
         .bind(&post.detail)
-        .bind(&post.posted_on)
-        .bind(&post.posted_timestamp)
+        .bind(post.posted_on)
+        .bind(post.posted_timestamp)
         .bind(&post.category)
         .execute(pool)
         .await?;

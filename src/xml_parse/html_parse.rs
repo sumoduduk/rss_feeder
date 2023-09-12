@@ -14,7 +14,7 @@ pub fn get_detail(description: &str) -> eyre::Result<HashMap<String, String>> {
     for element in elements {
         let key = element.inner_html();
 
-        if key == "Posted On".to_owned() {
+        if key == *"Posted On".to_owned() {
             continue;
         }
 
@@ -26,11 +26,7 @@ pub fn get_detail(description: &str) -> eyre::Result<HashMap<String, String>> {
             .ok_or_else(|| eyre!("html parse: are not a text"))?
             .to_string();
 
-        let value: Vec<&str> = value
-            .trim_start_matches(":")
-            .trim()
-            .split_whitespace()
-            .collect();
+        let value: Vec<&str> = value.trim_start_matches(':').split_whitespace().collect();
         let value = value.join(" ");
 
         mapped.insert(key, value);

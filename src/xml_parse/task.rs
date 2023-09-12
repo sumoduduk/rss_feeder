@@ -17,7 +17,7 @@ pub async fn worker_task(items: Vec<Item>, pool: &Pool<Postgres>) {
 
         let pool = pool.clone();
 
-        let _ = rt::spawn(async move {
+        rt::spawn(async move {
             let desc = item.description;
 
             match desc {

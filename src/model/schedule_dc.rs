@@ -3,9 +3,9 @@ use sqlx::{FromRow, Pool, Postgres};
 
 #[derive(Debug, FromRow)]
 pub struct ScheduleTask {
-    expected_time: DateTime<Utc>,
-    time_str: String,
-    done: bool,
+    pub expected_time: DateTime<Utc>,
+    pub time_str: String,
+    pub done: bool,
 }
 
 #[derive(Debug, FromRow)]

@@ -12,11 +12,15 @@ use sqlx::{Pool, Postgres};
 
 use crate::{
     model::{JobPost, RequestOperation, ResponseOperation},
-    schdule::{check_schedule, return_task_hour, to_central_time},
+    schdule::{
+        check_schedule, formated_time, return_task_hour, schedule_operation::operate_task,
+        to_central_time,
+    },
     utils::{datetime_to_string, reqwst_to_server},
     xml_parse::{parse_xml, process_request},
     AppState,
 };
+
 pub async fn start_task(state: Data<AppState>) -> impl Responder {
     let pool = &state.get_ref().pool;
 
@@ -32,11 +36,12 @@ pub async fn start_task(state: Data<AppState>) -> impl Responder {
             } else {
                 let hour_now = time_some.hour();
                 let returned_time = return_task_hour(hour_now);
+                let formated = formated_time(&time_some, returned_time);
 
-                todo!();
+                operate_task(&formated, time_some.into(), pool).await
             }
         }
-        None => todo!(),
+        _ => HttpResponse::InternalServerError().finish(),
     }
 }
 

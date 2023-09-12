@@ -1,4 +1,4 @@
-use actix_web::{HttpResponse, Responder};
+use actix_web::HttpResponse;
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use reqwest::{Client, StatusCode};
 use serde_json::json;
@@ -15,7 +15,7 @@ pub fn datetime_to_string(datetime: Option<DateTime<Utc>>) -> Option<String> {
 }
 
 pub fn parse_datetime_timezone(datetime_str: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
-    return Utc.datetime_from_str(datetime_str, "%Y-%m-%d %H:%M:%S%z");
+    Utc.datetime_from_str(datetime_str, "%Y-%m-%d %H:%M:%S%z")
 }
 
 pub fn string_to_datetime(input: &str) -> eyre::Result<DateTime<Utc>> {
@@ -24,7 +24,7 @@ pub fn string_to_datetime(input: &str) -> eyre::Result<DateTime<Utc>> {
     Ok(date)
 }
 
-pub async fn reqwst_to_server() -> impl Responder {
+pub async fn reqwst_to_server() -> HttpResponse {
     let response = Client::new().get(URI).send().await;
     match response {
         Ok(resp) => {
