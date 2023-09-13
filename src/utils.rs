@@ -30,7 +30,7 @@ pub async fn reqwst_to_server() -> HttpResponse {
         Ok(resp) => {
             if resp.status().is_success() {
                 let res = json!({
-                "message": "rewst to server",
+                "message": "reqwest to server",
                 "status": "OK"
                 });
 

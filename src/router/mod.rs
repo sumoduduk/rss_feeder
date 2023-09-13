@@ -1,4 +1,4 @@
-use std::io::BufReader;
+use std::{collections::HashMap, io::BufReader};
 
 use actix_web::{
     get, post,
@@ -101,7 +101,11 @@ pub async fn insert_db(pool: Data<AppState>, body: Json<JobPost>) -> impl Respon
 pub async fn begin_scrape(state: Data<AppState>) -> impl Responder {
     let pool = &state.get_ref().pool;
     let uri = &state.get_ref().uri;
-    let bytes_response = Client::new().get(uri).send().await;
+
+    let mut params = HashMap::with_capacity(1);
+    params.insert("sort", "recency");
+
+    let bytes_response = Client::new().get(uri).query(&params).send().await;
 
     match bytes_response {
         Ok(resp) => {
