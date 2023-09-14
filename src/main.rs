@@ -25,7 +25,9 @@ use std::{
 
 use router::get_all;
 
-use crate::router::{begin_scrape, insert_db, read_by_catergory, recent_search, start_task};
+use crate::router::{
+    begin_scrape, insert_db, job_search::get_job, read_by_catergory, recent_search, start_task,
+};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -59,6 +61,7 @@ async fn main() -> eyre::Result<()> {
             .route("/recent", get().to(recent_search))
             .route("/begin_process", get().to(begin_scrape))
             .route("/start_task", get().to(start_task))
+            .route("/search_job", get().to(get_job))
             .service(read_by_catergory)
             .service(insert_db)
             .app_data(Data::new(app_state.clone()))

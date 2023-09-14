@@ -1,3 +1,5 @@
+pub mod job_search;
+
 use std::{collections::HashMap, io::BufReader};
 
 use actix_web::{
@@ -17,7 +19,7 @@ use crate::{
         to_central_time,
     },
     utils::{datetime_to_string, reqwst_to_server},
-    xml_parse::{parse_xml, process_request},
+    xml_parse::process_request,
     AppState,
 };
 
