@@ -24,12 +24,12 @@ use self::task::worker_task;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct JobPost {
-    title: String,
-    link: String,
-    category: String,
-    detail: HashMap<String, String>,
-    posted_on: String,
-    posted_timestamp: i64,
+    pub title: String,
+    pub link: String,
+    pub category: String,
+    pub detail: HashMap<String, String>,
+    pub posted_on: String,
+    pub posted_timestamp: i64,
 }
 
 pub fn parse_xml<R>(reader: R) -> eyre::Result<Vec<JobPost>>
