@@ -11,6 +11,8 @@ use actix_web::{
     web::{get, Data},
     App, HttpResponse, HttpServer, Responder,
 };
+
+use actix_cors::Cors;
 use dotenvy::dotenv;
 use reqwest::Client;
 use rss::Channel;
@@ -55,6 +57,10 @@ async fn main() -> eyre::Result<()> {
     println!("listening at port : {}", addr);
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header();
         App::new()
             .route("/", get().to(index))
             .route("/get_all", get().to(get_all))
@@ -65,6 +71,7 @@ async fn main() -> eyre::Result<()> {
             .service(read_by_catergory)
             .service(insert_db)
             .app_data(Data::new(app_state.clone()))
+            .wrap(cors)
     })
     .bind(addr)?
     .run()
