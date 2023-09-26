@@ -54,34 +54,34 @@ async fn create(pool: web::Data<Pool<Postgres>>, item: web::Json<JobPost>) -> im
     HttpResponse::Ok().finish()
 }
 
-async fn sync(pool: web::Data<Pool<Postgres>>) -> impl Responder {
-    let client = Client::new();
-
-    let res = client.get("https://example.com/jobs").send().await?;
-    let jobs: Vec<JobPost> = res.json().await?;
-
-    for job in jobs {
-        let pool = pool.clone();
-
-        task::spawn(async move {
-            let _ = sqlx::query!(
-                r#"
-        INSERT INTO job_posts (title, link, detail, posted_on, posted_timestamp)
-        VALUES ($1, $2, $3, $4, $5)
-        "#,
-                job.title,
-                job.link,
-                &job.detail,
-                job.posted_on,
-                job.posted_timestamp
-            )
-            .execute(&pool)
-            .await;
-        });
-    }
-
-    HttpResponse::Ok().finish()
-}
+// async fn sync(pool: web::Data<Pool<Postgres>>) -> impl Responder {
+//     let client = Client::new();
+//
+//     let res = client.get("https://example.com/jobs").send().await?;
+//     let jobs: Vec<JobPost> = res.json().await?;
+//
+//     for job in jobs {
+//         let pool = pool.clone();
+//
+//         task::spawn(async move {
+//             let _ = sqlx::query!(
+//                 r#"
+//         INSERT INTO job_posts (title, link, detail, posted_on, posted_timestamp)
+//         VALUES ($1, $2, $3, $4, $5)
+//         "#,
+//                 job.title,
+//                 job.link,
+//                 &job.detail,
+//                 job.posted_on,
+//                 job.posted_timestamp
+//             )
+//             .execute(&pool)
+//             .await;
+//         });
+//     }
+//
+//     HttpResponse::Ok().finish()
+// }
 
 fn anot() {
     // let file = Client::new().get(uri).send().await?.bytes().await?;

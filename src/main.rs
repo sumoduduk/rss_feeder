@@ -13,7 +13,6 @@ use actix_web::{
 };
 
 use actix_cors::Cors;
-use dotenvy::dotenv;
 use reqwest::Client;
 use rss::Channel;
 use scraper::{Html, Selector};
@@ -39,8 +38,6 @@ pub struct AppState {
 
 #[actix_web::main]
 async fn main() -> eyre::Result<()> {
-    dotenv().ok();
-
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let uri = env::var("URI").expect("URI not found");
 
@@ -52,7 +49,7 @@ async fn main() -> eyre::Result<()> {
 
     let app_state = AppState { pool, uri };
 
-    let addr = "127.0.0.1:8080";
+    let addr = "0.0.0.0:8080";
 
     println!("listening at port : {}", addr);
 
